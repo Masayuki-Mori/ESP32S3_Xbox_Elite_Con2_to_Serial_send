@@ -2,6 +2,7 @@
 
 #include <NimBLEDevice.h>
 #include <Wire.h>
+#include <HardwareSerial.h>
 #include "driver/pcnt.h"
 
 bool input_flag = false;
@@ -300,18 +301,18 @@ void Send_serial_message(int16_t f_up,int16_t r_up,uint16_t sumo){
         f_up,
         r_up,
         sumo,
-        {'E', 'N'}
+        {'E', 'D'}
     }
   }; 
-  Serial0.write(packet.bytes,10);
+  Serial2.write(packet.bytes,10);
+  Serial.write(packet.bytes,10);
 }
 
 void setup() {
 
   profile = 3; 
   Serial.begin(115200);
-  Serial.println("Starting NimBLE Client");
-  Serial0.begin(115200, SERIAL_8N1,3,2);
+  Serial2.begin(115200, SERIAL_8N1,3,2);
 
   NimBLEDevice::init("");
   NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_PUBLIC);
