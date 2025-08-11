@@ -303,7 +303,7 @@ void Send_serial_message(int16_t f_up,int16_t r_up,uint16_t sumo){
         {'E', 'N'}
     }
   }; 
-  Serial.write(packet.bytes,10);
+  Serial0.write(packet.bytes,10);
 }
 
 void setup() {
@@ -311,7 +311,7 @@ void setup() {
   profile = 3; 
   Serial.begin(115200);
   Serial.println("Starting NimBLE Client");
-  Serial2.begin(115200, SERIAL_8N1,3,2);
+  Serial0.begin(115200, SERIAL_8N1,3,2);
 
   NimBLEDevice::init("");
   NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_PUBLIC);
