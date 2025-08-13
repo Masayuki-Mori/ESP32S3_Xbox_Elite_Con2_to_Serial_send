@@ -112,6 +112,7 @@ class ScanCallbacks : public NimBLEScanCallbacks {
          advertisedDevice->getServiceUUID().equals(uuidServiceHid))){
             *pConnectionState = ConnectionState::Found;
             advDevice = advertisedDevice;
+
     }
   }
 };
@@ -122,7 +123,7 @@ uint8_t battery = 0;
 static const int deviceAddressLen = 6;
 uint8_t deviceAddressArr[deviceAddressLen];
 
-void writeHIDReport(uint8_t* dataArr, size_t dataLen) {
+void writeHIDReport(uint8_t* dataArr) {
   if (pConnectedClient == nullptr) {
     return;
   }
@@ -130,7 +131,7 @@ void writeHIDReport(uint8_t* dataArr, size_t dataLen) {
   auto pService = pClient->getService(uuidServiceHid);
   for (auto pChara : pService->getCharacteristics()) {
     if (pChara->canWrite()) {
-      pChara->writeValue(dataArr, dataLen, false);
+      pChara->writeValue(dataArr, 8U, false);
     }
   }
 }
@@ -188,28 +189,6 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
   }
 }
 
-bool afterConnect(NimBLEClient* pClient) {
-  memcpy(deviceAddressArr, pClient->getPeerAddress().getBase(),deviceAddressLen);
-  for (auto pService : pClient->getServices(true)) {
-    auto sUuid = pService->getUUID();
-    if (!sUuid.equals(uuidServiceHid) && !sUuid.equals(uuidServiceBattery)) {
-      continue;  // skip
-    }
-    for (auto pChara : pService->getCharacteristics(true)) {
-      if (pChara->canRead()) {// Reading value is required for subscribe
-        auto str = pChara->readValue();
-        if (str.size() == 0) {
-          str = pChara->readValue();
-        }
-      }
-      if (pChara->canNotify()) {
-        if (pChara->subscribe(true,std::bind(&notifyCB, std::placeholders::_1,std::placeholders::_2, std::placeholders::_3,std::placeholders::_4),true)) {}
-      }
-    }
-  }
-  return true;
-}
-
 bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
   NimBLEClient* pClient = nullptr;
 
@@ -220,28 +199,23 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
       pClient->connect();
     }
   }
-  if (!pClient) {
+  if (true) {//!pClient
     if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
       return false;
     }
     pClient = NimBLEDevice::createClient();
     pClient->setClientCallbacks(clientCBs, true);
-    pClient->connect(advDevice, true);
+    pClient->connect(advDevice, false);
   }
-  int retryCount = retryCountInOneConnection;
-  while (!pClient->isConnected()) {
-    if (retryCount <= 0) {
-      return false;
-    }
-    delay(retryIntervalMs);
-    // Serial.println(pClient->toString().c_str());
-    pClient->connect(true);
-    --retryCount;
+  NimBLERemoteService* pSvc = pClient->getService(uuidServiceHid);
+  for (NimBLERemoteCharacteristic* pChr : pSvc->getCharacteristics(true)) {
+    if (pChr->canRead()) pChr->readValue();
+    if (pChr->canNotify()) pChr->subscribe(true,&notifyCB,true);
   }
-  bool result = afterConnect(pClient);
-  if (!result) {
-    return result;
-  }
+  pSvc = pClient->getService(uuidServiceBattery);
+  NimBLERemoteCharacteristic* pChr = pSvc->getCharacteristic("2a19");
+  pChr->readValue();
+  pChr->subscribe(true,&notifyCB,true);
   pConnectedClient = pClient;
   return true;
 }
@@ -292,6 +266,16 @@ void Send_serial_message(int16_t f_up,int16_t r_up,uint16_t sumo){
   }; 
   Serial2.write(packet.bytes,10);
   Serial.write(packet.bytes,10);
+  static uint8_t dataArr[8];
+  dataArr[0] = 0x0f;
+  dataArr[1] = 0;
+  dataArr[2] = 0;
+  dataArr[3] = 0;
+  dataArr[4] = 100;
+  dataArr[5] = 20;
+  dataArr[6] = 0;
+  dataArr[7] = 0;  
+  writeHIDReport(dataArr);
 }
 
 void setup() {
@@ -315,12 +299,9 @@ void loop() {
         NimBLEDevice::deleteBond(advDevice->getAddress());
         // reset();
         connectionState = ConnectionState::Scanning;
-      } else {
-        input_flag=true;
       }
       advDevice = nullptr;
     } else if (!NimBLEDevice::getScan()->isScanning()) {
-      // reset();
       startScan();
     }
   }
