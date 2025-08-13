@@ -38,11 +38,13 @@ static NimBLEUUID uuidServiceBattery("180f");
 static NimBLEUUID uuidServiceHid("1812");
 
 static const NimBLEAdvertisedDevice* advDevice;
+static bool                          doConnect = false;
 static NimBLEClient* pConnectedClient = nullptr;
 
 static const uint16_t controllerAppearance = 964;
 static const String controllerManufacturerDataNormal = "060000";
 static const String controllerManufacturerDataSearching = "0600030080";
+void startScan();
 
 enum class ConnectionState : uint8_t {
   Connected = 0,
@@ -51,25 +53,18 @@ enum class ConnectionState : uint8_t {
   Scanning = 3,
 };
 
-ConnectionState connectionState = ConnectionState::Scanning;
-uint32_t msScanTime = 4000; /** 0 = scan forever */
 uint8_t retryCountInOneConnection = 3;
 unsigned long retryIntervalMs = 100;
 NimBLEClient* pClient = nullptr;
 
 class ClientCallbacks : public NimBLEClientCallbacks {
- public:
-  ConnectionState* pConnectionState;
-  ClientCallbacks(ConnectionState* pConnectionState){
-    this->pConnectionState = pConnectionState;
-  }
   void onConnect(NimBLEClient* pClient) {
-    *pConnectionState = ConnectionState::WaitingForFirstNotification;
-    // pClient->updateConnParams(120,120,0,60);
+    Serial.printf("Connected\n");
   }
   void onDisconnect(NimBLEClient* pClient, int reason) {
-    *pConnectionState = ConnectionState::Scanning;
     pConnectedClient = nullptr;
+    Serial.printf("%s Disconnected, reason = %d - Starting scan\n", pClient->getPeerAddress().toString().c_str(), reason);
+    startScan();
   }
   void onPassKeyEntry(NimBLEConnInfo& connInfo) {
     NimBLEDevice::injectPassKey(connInfo, 0);
@@ -83,23 +78,22 @@ class ClientCallbacks : public NimBLEClientCallbacks {
       return;
     }
   }
-};
+}clientCallbacks;
 
 class ScanCallbacks : public NimBLEScanCallbacks {
  public:
-  ScanCallbacks(String strTargetDeviceAddress,
-                ConnectionState* pConnectionState) {
+  ScanCallbacks(String strTargetDeviceAddress) {
     if (strTargetDeviceAddress != "") {
       this->targetDeviceAddress =
           new NimBLEAddress(strTargetDeviceAddress.c_str(), 0);
     }
-    this->pConnectionState = pConnectionState;
   }
 
  private:
   NimBLEAddress* targetDeviceAddress = nullptr;
   ConnectionState* pConnectionState;
   void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override {
+    Serial.printf("Advertised Device found: %s\n", advertisedDevice->toString().c_str());
     auto pHex = NimBLEUtils::dataToHexString(
       (uint8_t*)advertisedDevice->getManufacturerData().data(),
       advertisedDevice->getManufacturerData().length());
@@ -110,15 +104,15 @@ class ScanCallbacks : public NimBLEScanCallbacks {
          (strcmp(pHex.c_str(), controllerManufacturerDataNormal.c_str()) == 0 ||
           strcmp(pHex.c_str(), controllerManufacturerDataSearching.c_str()) == 0) &&
          advertisedDevice->getServiceUUID().equals(uuidServiceHid))){
-            *pConnectionState = ConnectionState::Found;
+            Serial.printf("Found Our Service\n");
             advDevice = advertisedDevice;
-
+            doConnect = true;
+            NimBLEDevice::getScan()->stop();
     }
   }
 };
 
-ScanCallbacks* scanCBs = new ScanCallbacks("98:7a:14:40:27:b3", &connectionState);
-ClientCallbacks* clientCBs = new ClientCallbacks(&connectionState);
+ScanCallbacks* scanCBs = new ScanCallbacks("98:7a:14:40:27:b3");
 uint8_t battery = 0;
 static const int deviceAddressLen = 6;
 uint8_t deviceAddressArr[deviceAddressLen];
@@ -136,22 +130,17 @@ void writeHIDReport(uint8_t* dataArr) {
   }
 }
 void startScan() {
-  connectionState = ConnectionState::Scanning;
   auto pScan = NimBLEDevice::getScan();
-  pScan->setDuplicateFilter(false);
+  pScan->setDuplicateFilter(2);
   pScan->setScanCallbacks(scanCBs);
   pScan->setInterval(97);
-  pScan->setWindow(97);
-  pScan->start(msScanTime);
-}
-bool isConnected() {
-  return connectionState == ConnectionState::WaitingForFirstNotification ||connectionState == ConnectionState::Connected;
+  pScan->setWindow(67);
+  pScan->start(0);
 }
 
 void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
               uint8_t* pData, size_t length, bool isNotify) {
   auto sUuid = pRemoteCharacteristic->getRemoteService()->getUUID();
-  connectionState = ConnectionState::Connected;
   if (sUuid.equals(uuidServiceHid)) {
     joyLHori = ((uint16_t)pData[1] << 8) | pData[0];
     joyLVert = ((uint16_t)pData[3] << 8) | pData[2];
@@ -199,12 +188,12 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
       pClient->connect();
     }
   }
-  if (true) {//!pClient
+  if (!pClient) {
     if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
       return false;
     }
     pClient = NimBLEDevice::createClient();
-    pClient->setClientCallbacks(clientCBs, true);
+    pClient->setClientCallbacks(&clientCallbacks, true);
     pClient->connect(advDevice, false);
   }
   NimBLERemoteService* pSvc = pClient->getService(uuidServiceHid);
@@ -288,22 +277,19 @@ void setup() {
   NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_PUBLIC);
   NimBLEDevice::setSecurityAuth(true, false, false);
   NimBLEDevice::setPower(9); /* +9db */
+  startScan();
 
 }
 
 void loop() {
-  if (!isConnected()) {
-    if (advDevice != nullptr) {
-      auto connectionResult = connectToServer(advDevice);
-      if (!connectionResult || !isConnected()) {
-        NimBLEDevice::deleteBond(advDevice->getAddress());
-        // reset();
-        connectionState = ConnectionState::Scanning;
-      }
-      advDevice = nullptr;
-    } else if (!NimBLEDevice::getScan()->isScanning()) {
-      startScan();
+  if (doConnect) {
+    if (connectToServer(advDevice)) {
+      Serial.printf("Success!, scanning for more!\n");
+    } else {
+      Serial.printf("Failed to connect, starting scan\n");
+      NimBLEDevice::deleteBond(advDevice->getAddress());
     }
+   doConnect = false;
   }
 
   if(btnRB){
