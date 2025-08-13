@@ -2,8 +2,6 @@
 
 #include <NimBLEDevice.h>
 #include <Wire.h>
-#include <HardwareSerial.h>
-#include "driver/pcnt.h"
 
 bool input_flag = false;
 bool btnA, btnB, btnX, btnY;
@@ -16,7 +14,6 @@ uint16_t joyLVert = 32768;
 uint16_t joyRHori = 32768;
 uint16_t joyRVert = 32768;
 uint16_t trigLT, trigRT;
-uint8_t strdata[19];
 uint8_t profile;
 
 bool btnY_stat = false;
@@ -39,7 +36,6 @@ DataPacket packet = {0};
 
 static NimBLEUUID uuidServiceBattery("180f");
 static NimBLEUUID uuidServiceHid("1812");
-std::vector<NimBLEUUID> uuids = {uuidServiceBattery, uuidServiceHid};
 
 static const NimBLEAdvertisedDevice* advDevice;
 static NimBLEClient* pConnectedClient = nullptr;
@@ -154,7 +150,7 @@ bool isConnected() {
 void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
               uint8_t* pData, size_t length, bool isNotify) {
   auto sUuid = pRemoteCharacteristic->getRemoteService()->getUUID();
-    connectionState = ConnectionState::Connected;
+  connectionState = ConnectionState::Connected;
   if (sUuid.equals(uuidServiceHid)) {
     joyLHori = ((uint16_t)pData[1] << 8) | pData[0];
     joyLVert = ((uint16_t)pData[3] << 8) | pData[2];
@@ -192,6 +188,28 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
   }
 }
 
+bool afterConnect(NimBLEClient* pClient) {
+  memcpy(deviceAddressArr, pClient->getPeerAddress().getBase(),deviceAddressLen);
+  for (auto pService : pClient->getServices(true)) {
+    auto sUuid = pService->getUUID();
+    if (!sUuid.equals(uuidServiceHid) && !sUuid.equals(uuidServiceBattery)) {
+      continue;  // skip
+    }
+    for (auto pChara : pService->getCharacteristics(true)) {
+      if (pChara->canRead()) {// Reading value is required for subscribe
+        auto str = pChara->readValue();
+        if (str.size() == 0) {
+          str = pChara->readValue();
+        }
+      }
+      if (pChara->canNotify()) {
+        if (pChara->subscribe(true,std::bind(&notifyCB, std::placeholders::_1,std::placeholders::_2, std::placeholders::_3,std::placeholders::_4),true)) {}
+      }
+    }
+  }
+  return true;
+}
+
 bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
   NimBLEClient* pClient = nullptr;
 
@@ -220,18 +238,9 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
     pClient->connect(true);
     --retryCount;
   }
-  for(NimBLEUUID uuid : uuids){
-    NimBLERemoteService*  pSvc = pClient->getService(uuid);
-    Serial.printf(pSvc->getUUID().toString().c_str());
-    if (!pSvc) return false;
-    for (NimBLERemoteCharacteristic* pChr : pSvc->getCharacteristics()){
-      Serial.printf(pChr->getUUID().toString().c_str());
-      if(pChr->canNotify()){//Notifyが可能かどうか判定
-        Serial.printf("Set notify\n");
-        pChr->readValue();//これが無いとペアリングしない
-        pChr->subscribe(true,notifyCB,true);//notify コールバックに追加
-      }
-    }
+  bool result = afterConnect(pClient);
+  if (!result) {
+    return result;
   }
   pConnectedClient = pClient;
   return true;
