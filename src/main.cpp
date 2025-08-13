@@ -39,6 +39,7 @@ DataPacket packet = {0};
 
 static NimBLEUUID uuidServiceBattery("180f");
 static NimBLEUUID uuidServiceHid("1812");
+std::vector<NimBLEUUID> uuids = {uuidServiceBattery, uuidServiceHid};
 
 static const NimBLEAdvertisedDevice* advDevice;
 static NimBLEClient* pConnectedClient = nullptr;
@@ -153,9 +154,7 @@ bool isConnected() {
 void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
               uint8_t* pData, size_t length, bool isNotify) {
   auto sUuid = pRemoteCharacteristic->getRemoteService()->getUUID();
-  if (connectionState != ConnectionState::Connected) {
     connectionState = ConnectionState::Connected;
-  }
   if (sUuid.equals(uuidServiceHid)) {
     joyLHori = ((uint16_t)pData[1] << 8) | pData[0];
     joyLVert = ((uint16_t)pData[3] << 8) | pData[2];
@@ -163,36 +162,27 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
     joyRVert = ((uint16_t)pData[7] << 8) | pData[6];
     trigLT = ((uint16_t)pData[9] << 8) | pData[8];
     trigRT = ((uint16_t)pData[11] << 8) | pData[10];
-    uint8_t btnBits;
-    btnBits = pData[12];
-    btnDirUp = (btnBits == 1 || btnBits == 2 || btnBits == 8);
-    btnDirRight = (2 <= btnBits) && (btnBits <= 4);
-    btnDirDown = (4 <= btnBits) && (btnBits <= 6);
-    btnDirLeft = (6 <= btnBits) && (btnBits <= 8);
-    btnBits = pData[13];
-    btnA = btnBits & 0b00000001;
-    btnB = btnBits & 0b00000010;
-    btnX = btnBits & 0b00001000;
-    btnY = btnBits & 0b00010000;
-    btnLB = btnBits & 0b01000000;
-    btnRB = btnBits & 0b10000000;
-    btnBits = pData[14];
-    btnSelect = btnBits & 0b00000100;
-    btnStart = btnBits & 0b00001000;
-    btnXbox = btnBits & 0b00010000;
-    btnLS = btnBits & 0b00100000;
-    btnRS = btnBits & 0b01000000;
-    btnBits = pData[15];
-    btnShare = btnBits & 0b00000001;
-    profile = pData[16];
-    btnBits = pData[18];
-    btnR1_elt = btnBits & 0b00000001;
-    btnR2_elt = btnBits & 0b00000010;
-    btnL1_elt = btnBits & 0b00000100;
-    btnL2_elt = btnBits & 0b00001000;
-    for(uint8_t i = 0; i<19;i++){
-      strdata[i] = pData[i];
-    }
+    btnDirUp = (pData[12] == 1 || pData[12] == 2 || pData[12] == 8);
+    btnDirRight = (2 <= pData[12]) && (pData[12] <= 4);
+    btnDirDown = (4 <= pData[12]) && (pData[12] <= 6);
+    btnDirLeft = (6 <= pData[12]) && (pData[12] <= 8);
+    btnA      = pData[13] & 0b00000001;
+    btnB      = pData[13] & 0b00000010;
+    btnX      = pData[13] & 0b00001000;
+    btnY      = pData[13] & 0b00010000;
+    btnLB     = pData[13] & 0b01000000;
+    btnRB     = pData[13] & 0b10000000;
+    btnSelect = pData[14] & 0b00000100;
+    btnStart  = pData[14] & 0b00001000;
+    btnXbox   = pData[14] & 0b00010000;
+    btnLS     = pData[14] & 0b00100000;
+    btnRS     = pData[14] & 0b01000000;
+    btnShare  = pData[15] & 0b00000001;
+    profile   = pData[16];
+    btnR1_elt = pData[18] & 0b00000001;
+    btnR2_elt = pData[18] & 0b00000010;
+    btnL1_elt = pData[18] & 0b00000100;
+    btnL2_elt = pData[18] & 0b00001000;
     input_flag = true;
   } else {
     if (sUuid.equals(uuidServiceBattery)) {
@@ -200,28 +190,6 @@ void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
     } else {
     }
   }
-}
-
-bool afterConnect(NimBLEClient* pClient) {
-  memcpy(deviceAddressArr, pClient->getPeerAddress().getBase(),deviceAddressLen);
-  for (auto pService : pClient->getServices(true)) {
-    auto sUuid = pService->getUUID();
-    if (!sUuid.equals(uuidServiceHid) && !sUuid.equals(uuidServiceBattery)) {
-      continue;  // skip
-    }
-    for (auto pChara : pService->getCharacteristics(true)) {
-      if (pChara->canRead()) {// Reading value is required for subscribe
-        auto str = pChara->readValue();
-        if (str.size() == 0) {
-          str = pChara->readValue();
-        }
-      }
-      if (pChara->canNotify()) {
-        if (pChara->subscribe(true,std::bind(&notifyCB, std::placeholders::_1,std::placeholders::_2, std::placeholders::_3,std::placeholders::_4),true)) {}
-      }
-    }
-  }
-  return true;
 }
 
 bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
@@ -252,9 +220,18 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
     pClient->connect(true);
     --retryCount;
   }
-  bool result = afterConnect(pClient);
-  if (!result) {
-    return result;
+  for(NimBLEUUID uuid : uuids){
+    NimBLERemoteService*  pSvc = pClient->getService(uuid);
+    Serial.printf(pSvc->getUUID().toString().c_str());
+    if (!pSvc) return false;
+    for (NimBLERemoteCharacteristic* pChr : pSvc->getCharacteristics()){
+      Serial.printf(pChr->getUUID().toString().c_str());
+      if(pChr->canNotify()){//Notifyが可能かどうか判定
+        Serial.printf("Set notify\n");
+        pChr->readValue();//これが無いとペアリングしない
+        pChr->subscribe(true,notifyCB,true);//notify コールバックに追加
+      }
+    }
   }
   pConnectedClient = pClient;
   return true;
