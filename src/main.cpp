@@ -42,21 +42,12 @@ static const NimBLEAdvertisedDevice* advDevice;
 static bool                          doConnect = false;
 static NimBLEClient* pConnectedClient = nullptr;
 
-static const uint16_t controllerAppearance = 964;
-static const String controllerManufacturerDataNormal = "060000";
-static const String controllerManufacturerDataSearching = "0600030080";
-
 enum class ConnectionState : uint8_t {
   Connected = 0,
   WaitingForFirstNotification = 1,
   Found = 2,
   Scanning = 3,
 };
-
-uint8_t retryCountInOneConnection = 3;
-unsigned long retryIntervalMs = 100;
-NimBLEClient* pClient = nullptr;
-
 class ClientCallbacks : public NimBLEClientCallbacks {
   void onConnect(NimBLEClient* pClient) {
     Serial.printf("Connected\n");
@@ -82,27 +73,13 @@ class ClientCallbacks : public NimBLEClientCallbacks {
 
 class ScanCallbacks : public NimBLEScanCallbacks {
   void onResult(const NimBLEAdvertisedDevice* advertisedDevice) override {
-    Serial.printf("Advertised Device found: %s\n", advertisedDevice->toString().c_str());
-    auto pHex = NimBLEUtils::dataToHexString(
-      (uint8_t*)advertisedDevice->getManufacturerData().data(),
-      advertisedDevice->getManufacturerData().length());
-    if ((targetDeviceAddress != nullptr &&
-         advertisedDevice->getAddress().equals(*targetDeviceAddress)) ||
-        (targetDeviceAddress == nullptr &&
-         advertisedDevice->getAppearance() == controllerAppearance &&
-         (strcmp(pHex.c_str(), controllerManufacturerDataNormal.c_str()) == 0 ||
-          strcmp(pHex.c_str(), controllerManufacturerDataSearching.c_str()) == 0) &&
-         advertisedDevice->getServiceUUID().equals(uuidServiceHid))){
-            Serial.printf("Found Our Service\n");
-            advDevice = advertisedDevice;
-            doConnect = true;
-            NimBLEDevice::getScan()->stop();
-    }
+    Serial.printf("Found Our Service: %s\n", advertisedDevice->toString().c_str());
+    advDevice = advertisedDevice;
+    doConnect = true;
+    NimBLEDevice::getScan()->stop();
   }
 }ScanCallbacks;
 uint8_t battery = 0;
-static const int deviceAddressLen = 6;
-uint8_t deviceAddressArr[deviceAddressLen];
 
 void writeHIDReport(uint8_t* dataArr) {
   if (pConnectedClient == nullptr) {
@@ -164,17 +141,40 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
   if (NimBLEDevice::getCreatedClientCount()) {
     pClient = NimBLEDevice::getClientByPeerAddress(advDevice->getAddress());
     if (pClient) {
-      pClient->connect();
+      if (!pClient->connect(advDevice, false)) {
+        Serial.printf("Reconnect failed\n");
+        return false;
+      }
+      Serial.printf("Reconnected client\n");
+    } else {
+      pClient = NimBLEDevice::getDisconnectedClient();
     }
   }
   if (!pClient) {
     if (NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS) {
+      Serial.printf("Max clients reached - no more connections available\n");
       return false;
     }
     pClient = NimBLEDevice::createClient();
+    Serial.printf("New client created\n");
     pClient->setClientCallbacks(&clientCallbacks,false);
-    pClient->connect(advDevice, false);
+    pClient->setConnectionParams(12, 12, 0, 150);
+    pClient->setConnectTimeout(1 * 1000);
+    if (!pClient->connect(advDevice)) {
+      NimBLEDevice::deleteClient(pClient);
+      Serial.printf("Failed to connect, deleted client\n");
+      return false;
+    }
   }
+  if (!pClient->isConnected()) {
+        if (!pClient->connect(advDevice)) {
+            Serial.printf("Failed to connect\n");
+            return false;
+        }
+  }
+
+  Serial.printf("Connected to: %s RSSI: %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi());
+
   NimBLERemoteService* pSvc = pClient->getService(uuidServiceHid);
   for (NimBLERemoteCharacteristic* pChr : pSvc->getCharacteristics(true)) {
     if (pChr->canRead()) pChr->readValue();
@@ -233,7 +233,7 @@ void Send_serial_message(int16_t f_up,int16_t r_up,uint16_t sumo){
     }
   }; 
   Serial2.write(packet.bytes,10);
-  Serial.write(packet.bytes,10);
+  //Serial.write(packet.bytes,10);
   static uint8_t dataArr[8];
   dataArr[0] = 0x0f;
   dataArr[1] = 0;
@@ -259,8 +259,11 @@ void setup() {
   auto pScan = NimBLEDevice::getScan();
   pScan->setDuplicateFilter(2);
   pScan->setScanCallbacks(&ScanCallbacks);
+  pScan->setActiveScan(true);
   pScan->setInterval(97);
-  pScan->setWindow(67);
+  pScan->setFilterPolicy(BLE_HCI_SCAN_FILT_USE_WL);
+  NimBLEDevice::whiteListAdd(*targetDeviceAddress);
+  pScan->setWindow(97);
   pScan->start(0);
 
 }
@@ -305,7 +308,7 @@ void loop() {
     sprintf(buf4, "%05d", joyRVert);
     sprintf(buf5, "%04d", trigLT);
     sprintf(buf6, "%04d", trigRT);
-    /*Serial.print("Y: " + String(btnY) + " " +
+    Serial.print("Y: " + String(btnY) + " " +
       "X: " + String(btnX) + " " +
       "B: " + String(btnB) + " " +
       "A: " + String(btnA) + " " +
@@ -332,6 +335,6 @@ void loop() {
       "joyRVert: " + buf4 + "\n" +
       "trigLT: " + buf5 + "\n" +
       "trigRT: " + buf6 + "\n" +
-      "battery: " + String(battery) + "\n");*/
+      "battery: " + String(battery) + "\n");
   }
 }
