@@ -15,16 +15,38 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 ```c
 struct Xpad {
     // アナログスティック（左右）
-    uint16_t LHori, LVert, RHori, RVert;
-    // トリガー
-    uint16_t LT, RT;
+    uint16_t LHori :0(left) - 65535(right)
+    uint16_t LVert :0(up) - 65535(down)
+    uint16_t RHori :0(left) - 65535(right)
+    uint16_t RVert :0(up) - 65535(down)
+    // アナログトリガー
+    uint16_t LT :0 - 1023(pushed)
+    uint16_t RT :0 - 1023(pushed)
     // ボタン（ビットフィールド）
-    uint8_t A:1, B:1, X:1, Y:1, LB:1, RB:1;
+    bool A : 0 - 1 (pushed)
+    bool B : 0 - 1 (pushed)
+    bool X : 0 - 1 (pushed)
+    bool Y : 0 - 1 (pushed)
+    bool LB : 0 - 1 (pushed)
+    bool RB : 0 - 1 (pushed)
+    bool LS : 0 - 1 (pushed)
+    bool RS : 0 - 1 (pushed)
+    bool View : 0 - 1 (pushed)
+    bool Menu : 0 - 1 (pushed)
+    bool Xbox : 0 - 1 (pushed)
     // 方向パッド
-    uint8_t Up:1, Down:1, Left:1, Right:1;
-    // その他
-    uint8_t tenkey, Connect, Profile;
-    // など
+    bool Up : 0 - 1 (pushed)
+    bool Down : 0 - 1 (pushed)
+    bool Left : 0 - 1 (pushed)
+    bool Right : 0 - 1 (pushed)
+    // Eliteコントローラー専用
+    uint8_t Profile:0 - 3(Rotary)
+    bool P1 : 0 - 1 (pushed)
+    bool P2 : 0 - 1 (pushed)
+    bool P3 : 0 - 1 (pushed)
+    bool P4 : 0 - 1 (pushed)
+    uint8_t tLT_dep : 0 - 2 ()
+    uint8_t tRT_dep : 0 - 2 ()
 };
 ```
 
