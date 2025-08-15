@@ -1,6 +1,6 @@
 # ESP32S3 with Xbox Elite Wireless Controller Series 2 
 
-## 概要
+## 特徴
 ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します。
 - 各種ボタン・スティック・トリガーの入力をリアルタイム（7-15 ms）で取得します。
 - ESP32S3側からコントローラーを振動させることができます。
