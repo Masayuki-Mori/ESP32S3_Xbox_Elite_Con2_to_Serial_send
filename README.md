@@ -62,7 +62,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ### tenkey値と方向パッド変換表
 
-| `D-pad`Law value | Direction | `Up` | `Right` | `Down` | `Left` |
+| `D_pad`Law value | Direction | `Up` | `Right` | `Down` | `Left` |
 |-----------|------|------|---------|--------|--------|
 | 0 | None | 0 | 0 | 0 | 0 |
 | 1 | Up | 1 | 0 | 0 | 0 |
