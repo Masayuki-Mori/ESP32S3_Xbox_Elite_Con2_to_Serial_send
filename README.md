@@ -8,14 +8,16 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ### 1. 接続
 - **対象デバイス**: Xbox Elite Wireless Controller Series 2のみ。
-- **プロトコル**: NimBLE（ESP32用軽量BLEライブラリ）
+- **プロトコル**: [NimBLE]（ESP32用軽量BLEライブラリ）
 - **サービス**: HIDサービス（`1812`）とバッテリーサービス（`180f`）
+
+[NimBLE]:<https://github.com/h2zero/NimBLE-Arduino>
 
 ### 2. データ構造
 ### Analog inputs
 | [Phys. Name] | Variable Name | Data type | Value |
 |-------------|------------|---------|---------|
-| Left stick (Horizontal) | `Xpad.LHori` | `uint16_t` | 0～65535 (neutral:32768) |
+| Left stick (Horizontal) | `Xpad.LHori` | `v` | 0～65535 (neutral:32768) |
 | Left stick (Vertical) | `Xpad.LVert` | `uint16_t` | 0～65535 (neutral:32768) |
 | Right stick (Horizontal) | `Xpad.RHori` | `uint16_t` | 0～65535 (neutral:32768) |
 | Right stick (Vertical) | `Xpad.RVert` | `uint16_t` | 0～65535 (neutral:32768) |
