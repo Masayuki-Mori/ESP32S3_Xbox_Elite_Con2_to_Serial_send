@@ -283,14 +283,10 @@ void loop() {
     btnLB_stat=false;
     Send_serial_message(-20,-20,0);
   }
-  static unsigned long lastRead = 0;
   if(input_flag){
     input_flag = false;
-
-    Serial.print(millis()-lastRead);
-    Serial.println(" ms");
-    lastRead = millis();
-    /*if(btnA) Serial.print("A ");
+    
+    if(btnA) Serial.print("A ");
     if(btnB) Serial.print("B ");
     if(btnX) Serial.print("X ");
     if(btnY) Serial.print("Y ");
@@ -320,6 +316,6 @@ void loop() {
     Serial.printf("joyL: %05d,%05d\n",joyLHori,joyLVert);
     Serial.printf("joyR: %05d,%05d\n",joyRHori,joyRVert);
     Serial.printf("trigLT: %04d\n",trigLT);
-    Serial.printf("trigRT: %04d\n",trigRT);*/
+    Serial.printf("trigRT: %04d\n",trigRT);
   }
 }
