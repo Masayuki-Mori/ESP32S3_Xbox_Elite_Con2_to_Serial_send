@@ -11,10 +11,9 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 - **プロトコル**: NimBLE（ESP32用軽量BLEライブラリ）
 - **サービス**: HIDサービス（`1812`）とバッテリーサービス（`180f`）
 
-### 2. データ構造 <a name="https://support.xbox.com/en-US/help/hardware-network/controller/get-to-know-elite-series-2" />参考リンク
+### 2. データ構造
 ### Analog inputs
-
-| Phys. Name | Variable Name | Data type | Value |
+| [Phys. Name] | Variable Name | Data type | Value |
 |-------------|------------|---------|---------|
 | Left stick (Horizontal) | `Xpad.LHori` | `uint16_t` | 0～65535 (neutral:32768) |
 | Left stick (Vertical) | `Xpad.LVert` | `uint16_t` | 0～65535 (neutral:32768) |
@@ -23,9 +22,11 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 | Left trigger（LT） | `Xpad.LT` | `uint16_t` | 0～1023 (neutral:0) |
 | Right trigger（RT） | `Xpad.RT` | `uint16_t` | 0～1023 (neutral:0) |
 
+[Phys. Name]:<https://support.xbox.com/en-US/help/hardware-network/controller/get-to-know-elite-series-2/>
+
 ### Digital bottons
 
-| Phys. Name | Variable Name | Data type | Value |
+| [Phys. Name] | Variable Name | Data type | Value |
 |-------------|------------|---------|-----------|
 | A button | `Xpad.A` | `uint8_t:1` | 0,1 |
 | B button | `Xpad.B` | `uint8_t:1` | 0,1 |
@@ -41,7 +42,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ### Directional pad (D-pad)
 
-| Phys. Name | Variable Name | Data type | Value |
+| [Phys. Name] | Variable Name | Data type | Value |
 |-------------|------------|---------|-----------|
 | Up | `Xpad.Up` | `uint8_t:1` | 0,1 |
 | Down | `Xpad.Down` | `uint8_t:1` | 0,1 |
@@ -50,7 +51,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ### Elite Series 2 limited
 
-| Phys. Name | Variable Name | Data type | Value |
+| [Phys. Name] | Variable Name | Data type | Value |
 |-------------|------------|---------|----|
 | P1 paddle | `Xpad.P1` | `uint8_t:1` | 0,1 |
 | P2 paddle | `Xpad.P2` | `uint8_t:1` | 0,1 |
