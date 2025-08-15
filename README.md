@@ -11,7 +11,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 - **プロトコル**: NimBLE（ESP32用軽量BLEライブラリ）
 - **サービス**: HIDサービス（`1812`）とバッテリーサービス（`180f`）
 
-### 2. データ構造
+### 2. データ構造 <a name="https://support.xbox.com/en-US/help/hardware-network/controller/get-to-know-elite-series-2" />参考リンク
 ### Analog inputs
 
 | Phys. Name | Variable Name | Data type | Value |
