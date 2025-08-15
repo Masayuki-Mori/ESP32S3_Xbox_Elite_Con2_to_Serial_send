@@ -5,16 +5,17 @@
 
 bool input_flag = false;
 bool btnA, btnB, btnX, btnY;
-bool btnShare, btnStart, btnSelect, btnXbox;
+bool btnConnect, btnMenu, btnView, btnXbox;
 bool btnLB, btnRB, btnLS, btnRS;
-bool btnDirUp, btnDirLeft, btnDirRight, btnDirDown;
-bool btnL1_elt, btnL2_elt, btnR1_elt, btnR2_elt;
-uint16_t joyLHori = 32768;
-uint16_t joyLVert = 32768;
-uint16_t joyRHori = 32768;
-uint16_t joyRVert = 32768;
+bool btnUp, btnLeft, btnRight, btnDown;
+bool btnP1_elt, btnP2_elt, btnP3_elt, btnP4_elt;
+
+uint16_t joyLHori = 0;
+uint16_t joyLVert = 0;
+uint16_t joyRHori = 0;
+uint16_t joyRVert = 0;
 uint16_t trigLT, trigRT;
-uint8_t profile;
+uint8_t profile, tLT_dep, tRT_dep;
 
 bool btnY_stat = false;
 bool btnB_stat = false;
@@ -41,13 +42,6 @@ static NimBLEAddress* targetDeviceAddress = new NimBLEAddress("98:7a:14:40:27:b3
 static const NimBLEAdvertisedDevice* advDevice;
 static bool                          doConnect = false;
 static NimBLEClient* pConnectedClient = nullptr;
-
-enum class ConnectionState : uint8_t {
-  Connected = 0,
-  WaitingForFirstNotification = 1,
-  Found = 2,
-  Scanning = 3,
-};
 class ClientCallbacks : public NimBLEClientCallbacks {
   void onConnect(NimBLEClient* pClient) {
     Serial.printf("Connected\n");
@@ -82,56 +76,54 @@ class ScanCallbacks : public NimBLEScanCallbacks {
 uint8_t battery = 0;
 
 void writeHIDReport(uint8_t* dataArr) {
-  if (pConnectedClient == nullptr) {
-    return;
-  }
-  NimBLEClient* pClient = pConnectedClient;
-  auto pService = pClient->getService(uuidServiceHid);
-  for (auto pChara : pService->getCharacteristics()) {
-    if (pChara->canWrite()) {
-      pChara->writeValue(dataArr, 8U, false);
+  if (pConnectedClient != nullptr) {
+    NimBLERemoteService*  pSrvc = pConnectedClient->getService(uuidServiceHid);
+    for (NimBLERemoteCharacteristic* pChr : pSrvc->getCharacteristics()) {
+      if (pChr->canWrite()) pChr->writeValue(dataArr, 8U, false);
     }
   }
 }
+void notifyCB_Battery(NimBLERemoteCharacteristic* pRemoteCharacteristic,uint8_t* pData, size_t length, bool isNotify) {
+  battery = pData[0];
+}
 
-void notifyCB(NimBLERemoteCharacteristic* pRemoteCharacteristic,
-              uint8_t* pData, size_t length, bool isNotify) {
-  auto sUuid = pRemoteCharacteristic->getRemoteService()->getUUID();
-  if (sUuid.equals(uuidServiceHid)) {
-    joyLHori = ((uint16_t)pData[1] << 8) | pData[0];
-    joyLVert = ((uint16_t)pData[3] << 8) | pData[2];
-    joyRHori = ((uint16_t)pData[5] << 8) | pData[4];
-    joyRVert = ((uint16_t)pData[7] << 8) | pData[6];
-    trigLT = ((uint16_t)pData[9] << 8) | pData[8];
-    trigRT = ((uint16_t)pData[11] << 8) | pData[10];
-    btnDirUp = (pData[12] == 1 || pData[12] == 2 || pData[12] == 8);
-    btnDirRight = (2 <= pData[12]) && (pData[12] <= 4);
-    btnDirDown = (4 <= pData[12]) && (pData[12] <= 6);
-    btnDirLeft = (6 <= pData[12]) && (pData[12] <= 8);
-    btnA      = pData[13] & 0b00000001;
-    btnB      = pData[13] & 0b00000010;
-    btnX      = pData[13] & 0b00001000;
-    btnY      = pData[13] & 0b00010000;
-    btnLB     = pData[13] & 0b01000000;
-    btnRB     = pData[13] & 0b10000000;
-    btnSelect = pData[14] & 0b00000100;
-    btnStart  = pData[14] & 0b00001000;
-    btnXbox   = pData[14] & 0b00010000;
-    btnLS     = pData[14] & 0b00100000;
-    btnRS     = pData[14] & 0b01000000;
-    btnShare  = pData[15] & 0b00000001;
-    profile   = pData[16];
-    btnR1_elt = pData[18] & 0b00000001;
-    btnR2_elt = pData[18] & 0b00000010;
-    btnL1_elt = pData[18] & 0b00000100;
-    btnL2_elt = pData[18] & 0b00001000;
-    input_flag = true;
-  } else {
-    if (sUuid.equals(uuidServiceBattery)) {
-      battery = pData[0];
-    } else {
-    }
+void notifyCB_HID(NimBLERemoteCharacteristic* pRemoteCharacteristic,uint8_t* pData, size_t length, bool isNotify) {
+  joyLHori = ((uint16_t)pData[1] << 8) | pData[0];
+  joyLVert = ((uint16_t)pData[3] << 8) | pData[2];
+  joyRHori = ((uint16_t)pData[5] << 8) | pData[4];
+  joyRVert = ((uint16_t)pData[7] << 8) | pData[6];
+  trigLT = ((uint16_t)pData[9] << 8) | pData[8];
+  trigRT = ((uint16_t)pData[11] << 8) | pData[10];
+  switch (pData[12] & 0b00001111){
+    case 1: btnUp = true;  btnRight = false; btnDown = false; btnLeft = false; break;
+    case 2: btnUp = true;  btnRight = true;  btnDown = false; btnLeft = false; break;
+    case 3: btnUp = false; btnRight = true;  btnDown = false; btnLeft = false; break;
+    case 4: btnUp = false; btnRight = true;  btnDown = true;  btnLeft = false; break;
+    case 5: btnUp = false; btnRight = false; btnDown = true;  btnLeft = false; break;
+    case 6: btnUp = false; btnRight = false; btnDown = true;  btnLeft = true;  break;
+    case 7: btnUp = false; btnRight = false; btnDown = false; btnLeft = true;  break;
+    case 8: btnUp = true;  btnRight = false; btnDown = false; btnLeft = true;  break;
   }
+  btnA        = pData[13] & 0b00000001;
+  btnB        = pData[13] & 0b00000010;
+  btnX        = pData[13] & 0b00001000;
+  btnY        = pData[13] & 0b00010000;
+  btnLB       = pData[13] & 0b01000000;
+  btnRB       = pData[13] & 0b10000000;
+  btnView     = pData[14] & 0b00000100;
+  btnMenu     = pData[14] & 0b00001000;
+  btnXbox     = pData[14] & 0b00010000;
+  btnLS       = pData[14] & 0b00100000;
+  btnRS       = pData[14] & 0b01000000;
+  btnConnect  = pData[15] & 0b00000001;
+  profile     = pData[16] & 0b00000011;
+  tLT_dep     = pData[17] & 0b00000011;
+  tRT_dep     = (pData[17] & 0b00001100) >> 2;
+  btnP1_elt   = pData[18] & 0b00000001;
+  btnP2_elt   = pData[18] & 0b00000010;
+  btnP3_elt   = pData[18] & 0b00000100;
+  btnP4_elt   = pData[18] & 0b00001000;
+  input_flag  = true;
 }
 
 bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
@@ -158,7 +150,7 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
     pClient = NimBLEDevice::createClient();
     Serial.printf("New client created\n");
     pClient->setClientCallbacks(&clientCallbacks,false);
-    pClient->setConnectionParams(12, 12, 0, 150);
+    pClient->setConnectionParams(6, 6, 0, 150);
     pClient->setConnectTimeout(1 * 1000);
     if (!pClient->connect(advDevice)) {
       NimBLEDevice::deleteClient(pClient);
@@ -172,18 +164,18 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
             return false;
         }
   }
-
   Serial.printf("Connected to: %s RSSI: %d\n", pClient->getPeerAddress().toString().c_str(), pClient->getRssi());
-
+  
   NimBLERemoteService* pSvc = pClient->getService(uuidServiceHid);
   for (NimBLERemoteCharacteristic* pChr : pSvc->getCharacteristics(true)) {
     if (pChr->canRead()) pChr->readValue();
-    if (pChr->canNotify()) pChr->subscribe(true,&notifyCB,true);
+    if (pChr->canNotify()) pChr->subscribe(true,&notifyCB_HID,true);
   }
   pSvc = pClient->getService(uuidServiceBattery);
   NimBLERemoteCharacteristic* pChr = pSvc->getCharacteristic("2a19");
   pChr->readValue();
-  pChr->subscribe(true,&notifyCB,true);
+  pChr->subscribe(true,&notifyCB_Battery,true);
+
   pConnectedClient = pClient;
   return true;
 }
@@ -191,7 +183,6 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
 void PCA9865_init(){
   uint8_t buf[5];
   // Soft reset of the I2C chip
-  //Block write via the all leds register to turn off all servo and motor outputs
   Wire.beginTransmission(0x00);//First of all, Soft reset 
   Wire.write(0x06);
   Wire.endTransmission();
@@ -249,14 +240,14 @@ void Send_serial_message(int16_t f_up,int16_t r_up,uint16_t sumo){
 void setup() {
 
   profile = 3; 
-  Serial.begin(115200);
+  Serial.begin();
   Serial2.begin(115200, SERIAL_8N1,3,2);
 
   NimBLEDevice::init("");
   NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_PUBLIC);
   NimBLEDevice::setSecurityAuth(true, false, false);
   NimBLEDevice::setPower(9); /* +9db */
-  auto pScan = NimBLEDevice::getScan();
+  NimBLEScan* pScan = NimBLEDevice::getScan();
   pScan->setDuplicateFilter(2);
   pScan->setScanCallbacks(&ScanCallbacks);
   pScan->setActiveScan(true);
@@ -291,50 +282,40 @@ void loop() {
     btnLB_stat=false;
     Send_serial_message(-20,-20,0);
   }
-  
+  static unsigned long lastRead = 0;
   if(input_flag){
-
     input_flag = false;
 
-    char buf1[10];
-    char buf2[10];
-    char buf3[10];
-    char buf4[10];
-    char buf5[8];
-    char buf6[8];
-    sprintf(buf1, "%05d", joyLHori);
-    sprintf(buf2, "%05d", joyLVert);
-    sprintf(buf3, "%05d", joyRHori);
-    sprintf(buf4, "%05d", joyRVert);
-    sprintf(buf5, "%04d", trigLT);
-    sprintf(buf6, "%04d", trigRT);
-    Serial.print("Y: " + String(btnY) + " " +
-      "X: " + String(btnX) + " " +
-      "B: " + String(btnB) + " " +
-      "A: " + String(btnA) + " " +
-      "LB: " + String(btnLB) + " " +
-      "RB: " + String(btnRB) + "\n" +
-      "Select: " + String(btnSelect) + " " +
-      "Start: " + String(btnStart) + " " +
-      "Xbox: " + String(btnXbox) + " " +
-      "Share: " + String(btnShare) + " " +
-      "LS: " + String(btnLS) + " " +
-      "RS: " + String(btnRS) + "\n" +
-      "L1_elt: " + String(btnL1_elt) + " " +
-      "L2_elt: " + String(btnL2_elt) + " " +
-      "R1_elt: " + String(btnR1_elt) + " " +
-      "R2_elt: " + String(btnR2_elt) + "\n" +
-      "Up: " + String(btnDirUp) + " " +
-      "Right: " + String(btnDirRight) + " " +
-      "Down: " + String(btnDirDown) + " " +
-      "Left: " + String(btnDirLeft) + "\n"
-      "profile: " + String(profile) + "\n" +
-      "joyLHori: " + buf1 + "\n" +
-      "joyLVert: " + buf2 + "\n" +
-      "joyRHori: " + buf3 + "\n" +
-      "joyRVert: " + buf4 + "\n" +
-      "trigLT: " + buf5 + "\n" +
-      "trigRT: " + buf6 + "\n" +
-      "battery: " + String(battery) + "\n");
+    if(btnA) Serial.print("A ");
+    if(btnB) Serial.print("B ");
+    if(btnX) Serial.print("X ");
+    if(btnY) Serial.print("Y ");
+    if(btnLB) Serial.print("LB ");
+    if(btnRB) Serial.print("RB ");
+    Serial.println("");
+    if(btnConnect) Serial.print("Connect ");
+    if(btnXbox) Serial.print("Xbox ");
+    if(btnMenu) Serial.print("Menu ");
+    if(btnView) Serial.print("View ");
+    if(btnLS) Serial.print("LS ");
+    if(btnRS) Serial.print("RS ");
+    Serial.println("");
+    if(btnUp) Serial.print("Up ");
+    if(btnDown) Serial.print("Down ");
+    if(btnLeft) Serial.print("Left ");
+    if(btnRight) Serial.print("Right ");
+    Serial.println("");
+    if(btnP1_elt) Serial.print("P1_elt ");
+    if(btnP2_elt) Serial.print("P2_elt ");
+    if(btnP3_elt) Serial.print("P3_elt ");
+    if(btnP4_elt) Serial.print("P4_elt ");
+    Serial.println("");
+    Serial.printf("tLT_dep: %d, tRT_dep: %d\n",tLT_dep,tRT_dep);
+    Serial.printf("profile: %d\n",profile);
+    Serial.printf("Battery: %d\n",battery);
+    Serial.printf("joyL: %05d,%05d\n",joyLHori,joyLVert);
+    Serial.printf("joyR: %05d,%05d\n",joyRHori,joyRVert);
+    Serial.printf("trigLT: %04d\n",trigLT);
+    Serial.printf("trigRT: %04d\n",trigRT);
   }
 }
