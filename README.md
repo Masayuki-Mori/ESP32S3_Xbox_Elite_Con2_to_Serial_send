@@ -60,9 +60,9 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 | Right trigger lock | `Xpad.RT_lock` | `uint8_t:2` | 0～2 |
 | Profile (button) | `Xpad.Profile` | `uint8_t` | 0～3 |
 
-### tenkey値と方向パッド変換表
+### `Xpad.D_pad` law value and directions
 
-| `D_pad`Law value | Direction | `Up` | `Right` | `Down` | `Left` |
+| `Xpad.D_pad` law value | Direction | `Up` | `Right` | `Down` | `Left` |
 |-----------|------|------|---------|--------|--------|
 | 0 | None | 0 | 0 | 0 | 0 |
 | 1 | Up | 1 | 0 | 0 | 0 |
