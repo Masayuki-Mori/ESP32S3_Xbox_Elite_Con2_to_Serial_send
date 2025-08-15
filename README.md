@@ -123,60 +123,56 @@ static NimBLEAddress targetDeviceAddress("98:7a:14:40:27:b3",false);
 
 ## Xbox Elite Series 2コントローラー - ボタンと読み取り値対応表
 
-### アナログ入力（16bit値）
+### Analog inputs
 
-| 物理的な名称 | 構造体メンバ | データ型 | 値の範囲 | 説明 |
-|-------------|------------|---------|---------|------|
-| 左スティック（水平） | `Xpad.LHori` | `uint16_t` | 0～65535 | 左:0、中央:32768、右:65535 |
-| 左スティック（垂直） | `Xpad.LVert` | `uint16_t` | 0～65535 | 上:0、中央:32768、下:65535 |
-| 右スティック（水平） | `Xpad.RHori` | `uint16_t` | 0～65535 | 左:0、中央:32768、右:65535 |
-| 右スティック（垂直） | `Xpad.RVert` | `uint16_t` | 0～65535 | 上:0、中央:32768、下:65535 |
-| 左トリガー（LT） | `Xpad.LT` | `uint16_t` | 0～65535 | 未押下:0、最大:65535 |
-| 右トリガー（RT） | `Xpad.RT` | `uint16_t` | 0～65535 | 未押下:0、最大:65535 |
+| Phys. Name | Variable Name | Data type | Range |
+|-------------|------------|---------|---------|
+| Left stick (Horizontal) | `Xpad.LHori` | `uint16_t` | 0～65535(neutral:32768) |
+| Left stick (Vertical) | `Xpad.LVert` | `uint16_t` | 0～65535(neutral:32768) |
+| Right stick (Horizontal) | `Xpad.RHori` | `uint16_t` | 0～65535(neutral:32768) |
+| Right stick (Vertical) | `Xpad.RVert` | `uint16_t` | 0～65535(neutral:32768) |
+| Left trigger（LT） | `Xpad.LT` | `uint16_t` | 0～1023(neutral:0) |
+| Right trigger（RT） | `Xpad.RT` | `uint16_t` | 0～1023(neutral:0) |
 
-### デジタルボタン（1bit値）
+### Digital bottons
 
-| 物理的な名称 | 構造体メンバ | データ型 | 押下時の値 | 説明 |
-|-------------|------------|---------|-----------|------|
-| Aボタン | `Xpad.A` | `uint8_t:1` | `1` | 右側の下ボタン |
-| Bボタン | `Xpad.B` | `uint8_t:1` | `1` | 右側の右ボタン |
-| Xボタン | `Xpad.X` | `uint8_t:1` | `1` | 右側の左ボタン |
-| Yボタン | `Xpad.Y` | `uint8_t:1` | `1` | 右側の上ボタン |
-| 左バンパー | `Xpad.LB` | `uint8_t:1` | `1` | 左肩上部ボタン |
-| 右バンパー | `Xpad.RB` | `uint8_t:1` | `1` | 右肩上部ボタン |
-| Viewボタン | `Xpad.View` | `uint8_t:1` | `1` | 左側小ボタン（旧Back） |
-| Menuボタン | `Xpad.Menu` | `uint8_t:1` | `1` | 右側小ボタン（旧Start） |
-| Xboxボタン | `Xpad.Xbox` | `uint8_t:1` | `1` | 中央のXboxロゴボタン |
-| 左スティック押し込み | `Xpad.LS` | `uint8_t:1` | `1` | 左スティックのクリック |
-| 右スティック押し込み | `Xpad.RS` | `uint8_t:1` | `1` | 右スティックのクリック |
+| Phys. Name | Variable Name | Data type | Range |
+|-------------|------------|---------|-----------|
+| A button | `Xpad.A` | `uint8_t:1` | `0,1` |
+| B button | `Xpad.B` | `uint8_t:1` | `0,1` |
+| X button | `Xpad.X` | `uint8_t:1` | `0,1` |
+| Y button | `Xpad.Y` | `uint8_t:1` | `0,1` |
+| Left bumper | `Xpad.LB` | `uint8_t:1` | `0,1` |
+| Left bumper | `Xpad.RB` | `uint8_t:1` | `0,1` |
+| View button | `Xpad.View` | `uint8_t:1` | `0,1` |
+| Menu button | `Xpad.Menu` | `uint8_t:1` | `0,1` |
+| Xbox button | `Xpad.Xbox` | `uint8_t:1` | `0,1` |
+| Left stick click | `Xpad.LS` | `uint8_t:1` | `0,1` |
+| Right stick click | `Xpad.RS` | `uint8_t:1` | `0,1` |
 
-### 方向パッド（D-Pad）
+### Directional pad (D-pad)
 
-| 物理的な名称 | 構造体メンバ | データ型 | 押下時の値 | 説明 |
-|-------------|------------|---------|-----------|------|
-| 上方向 | `Xpad.Up` | `uint8_t:1` | `1` | D-Pad上方向 |
-| 下方向 | `Xpad.Down` | `uint8_t:1` | `1` | D-Pad下方向 |
-| 左方向 | `Xpad.Left` | `uint8_t:1` | `1` | D-Pad左方向 |
-| 右方向 | `Xpad.Right` | `uint8_t:1` | `1` | D-Pad右方向 |
+| Phys. Name | Variable Name | Data type | Range |
+|-------------|------------|---------|-----------|
+| Up | `Xpad.Up` | `uint8_t:1` | `0,1` |
+| Down | `Xpad.Down` | `uint8_t:1` | `0,1` |
+| Left | `Xpad.Left` | `uint8_t:1` | `0,1` |
+| Right | `Xpad.Right` | `uint8_t:1` | `0,1` |
 
 ### 特殊な入力処理
-
-| 入力 | 構造体メンバ | データ型 | 値 | 説明 |
-|------|------------|---------|----|----- |
-| D-Pad生値 | `Xpad.tenkey` | `uint8_t` | 1-8 | switch文で個別方向に変換 |
-| 接続状態 | `Xpad.Connect` | `uint8_t` | 0/1 | 接続ボタンの状態 |
 | プロファイル | `Xpad.Profile` | `uint8_t` | 0-3 | アクティブなプロファイル番号 |
 
-### Elite Series 2 専用機能
+### Elite Series 2 limited
 
-| 物理的な名称 | 構造体メンバ | データ型 | 値 | 説明 |
-|-------------|------------|---------|----|----- |
-| パドル1 | `Xpad.P1` | `uint8_t:1` | `1` | 背面パドル1（左上） |
-| パドル2 | `Xpad.P2` | `uint8_t:1` | `1` | 背面パドル2（左下） |
-| パドル3 | `Xpad.P3` | `uint8_t:1` | `1` | 背面パドル3（右上） |
-| パドル4 | `Xpad.P4` | `uint8_t:1` | `1` | 背面パドル4（右下） |
-| 左トリガー深度 | `Xpad.tLT_dep` | `uint8_t:2` | 0-3 | トリガーストップ位置 |
-| 右トリガー深度 | `Xpad.tRT_dep` | `uint8_t:2` | 0-3 | トリガーストップ位置 |
+| Phys. Name | Variable Name | Data type | Range |
+|-------------|------------|---------|----|
+| P1 paddle | `Xpad.P1` | `uint8_t:1` | `0,1` |
+| P2 paddle | `Xpad.P2` | `uint8_t:1` | `0,1` |
+| P3 paddle | `Xpad.P3` | `uint8_t:1` | `0,1` |
+| P4 paddle | `Xpad.P4` | `uint8_t:1` | `0,1` |
+| Left trigger lock | `Xpad.tLT_dep` | `uint8_t:2` | `0,1,2` |
+| Right trigger lock | `Xpad.tRT_dep` | `uint8_t:2` | `0,1,2` |
+| Profile (button) | `Xpad.Profile` | `uint8_t` | 0-3 |
 
 ### tenkey値と方向パッド変換表
 
