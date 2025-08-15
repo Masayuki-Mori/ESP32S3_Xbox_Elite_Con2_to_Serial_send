@@ -120,3 +120,5 @@ static NimBLEAddress targetDeviceAddress("98:7a:14:40:27:b3",false);
    - RB/LBボタン制御
    - シリアル/HID出力
    - デバッグ情報表示
+
+Left stick  (1) and right stick  (12)
