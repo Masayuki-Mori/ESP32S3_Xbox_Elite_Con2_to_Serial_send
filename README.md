@@ -1,4 +1,4 @@
-# Xbox Elite Wireless Controller Series 2 制御システム - 動作説明と注意事項
+#ESP32S3 with Xbox Elite Wireless Controller Series 2 
 
 ## 概要
 ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します。
