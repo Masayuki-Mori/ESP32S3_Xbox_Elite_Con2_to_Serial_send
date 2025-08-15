@@ -18,7 +18,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 ### Analog inputs
 | [Phys. Name] | Variable Name | Data type | Value |
 |-------------|------------|---------|---------|
-| Left stick (Horizontal) | `Xpad.LHori` | `v` | 0～65535 (neutral:32768) |
+| Left stick (Horizontal) | `Xpad.LHori` | `uint16_t` | 0～65535 (neutral:32768) |
 | Left stick (Vertical) | `Xpad.LVert` | `uint16_t` | 0～65535 (neutral:32768) |
 | Right stick (Horizontal) | `Xpad.RHori` | `uint16_t` | 0～65535 (neutral:32768) |
 | Right stick (Vertical) | `Xpad.RVert` | `uint16_t` | 0～65535 (neutral:32768) |
