@@ -150,8 +150,9 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
     pClient = NimBLEDevice::createClient();
     Serial.printf("New client created\n");
     pClient->setClientCallbacks(&clientCallbacks,false);
+    pClient->setConnectPhy(BLE_GAP_LE_PHY_1M_MASK);
     pClient->setConnectionParams(6, 6, 0, 150);
-    pClient->setConnectTimeout(1 * 1000);
+    //pClient->setConnectTimeout(500);
     if (!pClient->connect(advDevice)) {
       NimBLEDevice::deleteClient(pClient);
       Serial.printf("Failed to connect, deleted client\n");
@@ -286,7 +287,10 @@ void loop() {
   if(input_flag){
     input_flag = false;
 
-    if(btnA) Serial.print("A ");
+    Serial.print(millis()-lastRead);
+    Serial.println(" ms");
+    lastRead = millis();
+    /*if(btnA) Serial.print("A ");
     if(btnB) Serial.print("B ");
     if(btnX) Serial.print("X ");
     if(btnY) Serial.print("Y ");
@@ -316,6 +320,6 @@ void loop() {
     Serial.printf("joyL: %05d,%05d\n",joyLHori,joyLVert);
     Serial.printf("joyR: %05d,%05d\n",joyRHori,joyRVert);
     Serial.printf("trigLT: %04d\n",trigLT);
-    Serial.printf("trigRT: %04d\n",trigRT);
+    Serial.printf("trigRT: %04d\n",trigRT);*/
   }
 }
