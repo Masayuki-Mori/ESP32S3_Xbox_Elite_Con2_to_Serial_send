@@ -8,10 +8,10 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ### 1. 接続
 - **対象デバイス**: Xbox Elite Wireless Controller Series 2のみ。
-- **プロトコル**: [NimBLE]（ESP32用軽量BLEライブラリ）
+- **プロトコル**: [h2zero/NimBLE-Arduino]（ESP32用軽量BLEライブラリ）
 - **サービス**: HIDサービス（`1812`）とバッテリーサービス（`180f`）
 
-[NimBLE]:<https://github.com/h2zero/NimBLE-Arduino>
+[h2zero/NimBLE-Arduino]:<https://github.com/h2zero/NimBLE-Arduino>
 
 ### 2. データ構造
 ### Analog inputs
@@ -121,15 +121,10 @@ static NimBLEAddress targetDeviceAddress("98:7a:14:40:27:b3",false);
 1. ゲームパッドのペアリングモード確認
 2. MACアドレスの正確性確認
 
-#### PCA9865が応答しない
-1. I2C配線確認（SDA/SCL + 電源）
-2. プルアップ抵抗（4.7kΩ）の確認
-3. アドレス競合の確認（`i2c_scanner`使用推奨）
-
 ## 動作フロー
-1. 起動時：NimBLE初期化、スキャン開始
-2. ターゲットデバイス発見：自動接続試行
-3. 接続成功：HID/バッテリー通知登録
+1. 起動時：NimBLE initialize, Scan start
+2. ターゲットデバイス発見：Connect to server device automatically 
+3. 接続成功：Subscribe HID/Batter Services Notification
 4. ループ処理：
    - ゲームパッド入力監視
    - RB/LBボタン制御
