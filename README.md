@@ -10,6 +10,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 - **対象デバイス**: Xbox Elite Wireless Controller Series 2のみ。
 - **プロトコル**: [h2zero/NimBLE-Arduino]（ESP32用軽量BLEライブラリ）
 - **サービス**: HIDサービス（`1812`）とバッテリーサービス（`180f`）
+- **Bluetooth情報**:LE 1M PHYで接続 
 
 [h2zero/NimBLE-Arduino]:<https://github.com/h2zero/NimBLE-Arduino>
 
