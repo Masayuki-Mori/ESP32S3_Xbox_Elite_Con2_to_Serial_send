@@ -16,7 +16,7 @@ struct __attribute__((packed)){
   uint16_t RVert;
   uint16_t LT;
   uint16_t RT;
-  uint8_t tenkey;
+  uint8_t D_pad;
   uint8_t A:1;
   uint8_t B:1;
   uint8_t :1;
@@ -34,8 +34,8 @@ struct __attribute__((packed)){
   uint8_t :1;
   uint8_t Connect;
   uint8_t Profile;
-  uint8_t tLT_dep:2;
-  uint8_t tRT_dep:2;
+  uint8_t LT_lock:2;
+  uint8_t RT_lock:2;
   uint8_t :4;
   uint8_t P1:1;
   uint8_t P2:1;
@@ -113,7 +113,7 @@ void notifyCB_Battery(NimBLERemoteCharacteristic* pRemoteCharacteristic,uint8_t*
 
 void notifyCB_HID(NimBLERemoteCharacteristic* pRemoteCharacteristic,uint8_t* pData, size_t length, bool isNotify) {
   memcpy(&Xpad, pData, sizeof(Xpad));
-  switch (Xpad.tenkey) {
+  switch (Xpad.D_pad) {
     case 1: Xpad.Up = true;  Xpad.Right = false; Xpad.Down = false; Xpad.Left = false; break;
     case 2: Xpad.Up = true;  Xpad.Right = true;  Xpad.Down = false; Xpad.Left = false; break;
     case 3: Xpad.Up = false; Xpad.Right = true;  Xpad.Down = false; Xpad.Left = false; break;
@@ -311,7 +311,7 @@ void loop() {
     if(Xpad.P3) Serial.print("P3 ");
     if(Xpad.P4) Serial.print("P4 ");
     Serial.println("");
-    Serial.printf("tLT_dep: %d, tRT_dep: %d\n",Xpad.tLT_dep,Xpad.tRT_dep);
+    Serial.printf("LT_lock: %d, RT_lock: %d\n",Xpad.LT_lock,Xpad.RT_lock);
     Serial.printf("profile: %d\n",Xpad.Profile);
     Serial.printf("Battery: %d\n",battery);
     Serial.printf("joyL: %05d,%05d\n",Xpad.LHori,Xpad.LVert);
