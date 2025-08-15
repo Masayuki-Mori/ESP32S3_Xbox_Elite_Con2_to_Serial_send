@@ -86,12 +86,6 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ## 注意事項
 
-### ハードウェア要件
-1. **ESP32**: NimBLE対応が必要
-2. **PCA9865**: I2Cサーボドライバ（アドレス: `0x40`）
-3. **シリアル接続**: Serial2（GPIO3=RX, GPIO2=TX, 115200bps）
-4. **I2C**: Wire（SDA/SCLピンは環境依存）
-
 ### PlatformIO設定
 #### `platformio.ini` 必要設定例
 ```ini
