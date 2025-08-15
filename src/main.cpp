@@ -150,7 +150,7 @@ bool connectToServer(const NimBLEAdvertisedDevice* advDevice) {
     pClient = NimBLEDevice::createClient();
     Serial.printf("New client created\n");
     pClient->setClientCallbacks(&clientCallbacks,false);
-    pClient->setConnectPhy(BLE_GAP_LE_PHY_1M_MASK);
+    //pClient->setConnectPhy(BLE_GAP_LE_PHY_1M_MASK);
     pClient->setConnectionParams(6, 6, 0, 150);
     //pClient->setConnectTimeout(500);
     if (!pClient->connect(advDevice)) {
