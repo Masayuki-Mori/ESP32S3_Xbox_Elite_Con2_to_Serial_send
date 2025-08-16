@@ -68,7 +68,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 | `Xpad.D_pad` law value | Direction | `Up` | `Right` | `Down` | `Left` |
 |-----------|------|------|---------|--------|--------|
-| 0 | None | 0 | 0 | 0 | 0 |
+| 0 | neutral | 0 | 0 | 0 | 0 |
 | 1 | Up | 1 | 0 | 0 | 0 |
 | 2 | Upper right | 1 | 1 | 0 | 0 |
 | 3 | Right | 0 | 1 | 0 | 0 |
