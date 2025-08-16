@@ -8,7 +8,7 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 
 ### 1. 接続
 - **対象デバイス**: Xbox Elite Wireless Controller Series 2のみ。
-- **プロトコル**: [h2zero/NimBLE-Arduino]（ESP32用軽量BLEライブラリ）
+- **使用ライブラリ**: [h2zero/NimBLE-Arduino]（Ver2.3.4で動作確認済み）
 - **サービス**: HIDサービス（`1812`）とバッテリーサービス（`180f`）
 - **Bluetooth情報**:LE 1M PHYで接続 
 
@@ -89,17 +89,18 @@ ESP32S3とXbox Elite Wireless Controller Series 2をBluetoothで接続します�
 ### PlatformIO設定
 #### `platformio.ini` 必要設定例
 ```ini
-[env:esp32]
+[env:seeed_xiao_esp32s3]
 platform = espressif32
-board = esp32dev
+board = seeed_xiao_esp32s3
 framework = arduino
-lib_deps = 
-    h2zero/NimBLE-Arduino@^1.4.0
-    Wire
-monitor_speed = 115200
+lib_deps = h2zero/NimBLE-Arduino
+upload_speed = 921600
+monitor_speed = 250000
+board_build.f_cpu = 240000000L
 build_flags = 
-    -DCONFIG_BT_NIMBLE_ROLE_CENTRAL_DISABLED=0
-    -DCONFIG_BT_NIMBLE_ROLE_PERIPHERAL_DISABLED=0
+        -D ARDUINO_USB_CDC_ON_BOOT=1
+        -D ARDUINO_USB_MODE=1
+upload_port = /dev/tty.usbmodem101
 ```
 
 ### 重要な注意点
@@ -125,3 +126,34 @@ static NimBLEAddress targetDeviceAddress("98:7a:14:40:27:b3",false);
    - RB/LBボタン制御
    - シリアル/HID出力
    - デバッグ情報表示
+
+## Xbox Elite Wireless Controller Series 2 UUID list
+
+> [!IMPORTANT]
+> - UUID 0x180f(Battery Service) always show value 0x64(100).So we couldn't know battery level.
+> - UUID 00000005-5f60-4c4f-9c83-a7953298d40d also show Pad inputs,bat slow reflesh rate(15ms).
+
+| Service UUID | Characteristic UUID | Handle | Can Read | Can Write | Can notify |
+|--------------|---------------------|--------|----------|-----------|------------|
+| 0x1800 | 0x2a00 | 3 |  :heavy_check_mark: |  |  |
+|        | 0x2a01 | 5 |  :heavy_check_mark: |  |  |
+|        | 0x2a04 | 7 |  :heavy_check_mark: |  |  |
+| 0x1801 |  |  | |  |  |
+| 0x180a | 0x2a29 | 11 |  :heavy_check_mark: |  |  |
+|        | 0x2a50 | 13 |  :heavy_check_mark: |  |  |
+|        | 0x2a26 | 15 |  :heavy_check_mark: |  |  |
+|        | 0x2a25 | 17 |  :heavy_check_mark: |  |  |
+| 0x180f(Battery Service) | 0x2a19 | 20 |  :heavy_check_mark: |  | :heavy_check_mark:  |
+| 0x1812(HID Service) | 0x2a4a | 24 |  :heavy_check_mark: |  |  |
+|        | 0x2a4c | 26 |  |  |  |
+|        | 0x2a4b | 28 | :heavy_check_mark: |  |  |
+|        | 0x2a4d(Pad inputs) | 30 | :heavy_check_mark: |  | :heavy_check_mark: |
+|        | 0x2a4d(Vibration) | 34 | :heavy_check_mark: | :heavy_check_mark: |  |
+|        | 0x2a4d | 37 | :heavy_check_mark: |  | :heavy_check_mark: |
+|        | 0x2a4d | 41 | :heavy_check_mark: |  | :heavy_check_mark: |
+| 00000001-5f60-4c4f-9c83-a7953298d40d | 00000002-5f60-4c4f-9c83-a7953298d40d | 46 |  :heavy_check_mark: |  |  |
+|  | 00000003-5f60-4c4f-9c83-a7953298d40d | 48 |  :heavy_check_mark: |  |  |
+|  | 00000004-5f60-4c4f-9c83-a7953298d40d | 50 |   | :heavy_check_mark: |  |
+|  | 00000005-5f60-4c4f-9c83-a7953298d40d | 52 |  :heavy_check_mark: |  | :heavy_check_mark: |
+|  | 00000006-5f60-4c4f-9c83-a7953298d40d | 55 |  :heavy_check_mark: | :heavy_check_mark: |  |
+|  | 00000008-5f60-4c4f-9c83-a7953298d40d | 57 |  :heavy_check_mark: | :heavy_check_mark: |  |
